@@ -24,8 +24,6 @@ namespace ProductsMicroService.API
                 options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
 
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
 
             builder.Services.AddCors(options => {
 
@@ -37,6 +35,11 @@ namespace ProductsMicroService.API
                 });
             });
 
+
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
+
+
             var app = builder.Build();
 
             app.UseExceptionHandlingMiddleware();
@@ -44,9 +47,10 @@ namespace ProductsMicroService.API
 
             app.UseCors();
 
+
             app.UseSwagger();
             app.UseSwaggerUI();
-
+            
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();

@@ -33,11 +33,17 @@ namespace BusinessLogicLayer.Services
             }
             //validate the product using Fluent Validation
             ValidationResult validationResult = await _productAddRequestValidator.ValidateAsync(productAddRequest);
-        
+
+            if (!validationResult.IsValid)
+            {
+                string errors = string.Join(", ", validationResult.Errors.Select(temp => temp.ErrorMessage));
+                throw new ArgumentException(errors);
+            
+            }
             //Attempt to add product
             Product productInput = _mapper.Map<Product>(productAddRequest); //Map productAddRequest into product type (it invokes ProductAddRequestToProductMappingProfile)
             Product? addedProduct = await _productsRepository.AddProduct(productInput);
-            if (addedProduct != null)
+            if (addedProduct == null)
             {
                 return null;
             }
@@ -84,11 +90,19 @@ namespace BusinessLogicLayer.Services
             return productResponses.ToList();
         }
 
-        public async Task<List<ProductResponse?>> GetProductsByCondition(Expression<Func<Product, bool>> conditionExpression)
+        public async Task<List<ProductResponse?>> GetProductNamesByCondition(string SearchString)
         {
-            IEnumerable<Product?> products = await _productsRepository.GetProductsByCondition( conditionExpression);
+            IEnumerable<Product?> products = await _productsRepository.GetProductNamesByCondition( SearchString);
             IEnumerable<ProductResponse> productResponses = _mapper.Map<IEnumerable<ProductResponse>>(products);
             
+            return productResponses.ToList();
+        }
+
+        public async Task<List<ProductResponse?>> GetProductCategpriesByCondition(string SearchString)
+        {
+            IEnumerable<Product?> products = await _productsRepository.GetProductCategoriesByCondition(SearchString);
+            IEnumerable<ProductResponse> productResponses = _mapper.Map<IEnumerable<ProductResponse>>(products);
+
             return productResponses.ToList();
         }
 
@@ -96,7 +110,7 @@ namespace BusinessLogicLayer.Services
         {
             Product? existingProduct = await _productsRepository.GetProductByCondition(temp=> temp.ProductID == productUpdateRequest.ProductID);
 
-            if (existingProduct != null)
+            if (existingProduct == null)
             {
                 throw new ArgumentException("Invalid Product ID");
             }

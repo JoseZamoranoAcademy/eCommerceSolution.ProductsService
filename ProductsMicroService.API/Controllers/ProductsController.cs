@@ -1,4 +1,5 @@
 ﻿using BusinessLogicLayer.DTO;
+using BusinessLogicLayer.Enumerations;
 using BusinessLogicLayer.ServiceContracts;
 using FluentValidation;
 using FluentValidation.Results;
@@ -33,7 +34,7 @@ namespace ProductsMicroService.API.Controllers
             return Ok(products);
         }
 
-        [Route("/search/product-id/{ProductID:guid}")] ////GET /api/products/search/product-id/00000000-0000-0000-0000-000000000000
+        [Route("search/product-id/{ProductID:guid}")] ////GET /api/products/search/product-id/00000000-0000-0000-0000-000000000000
         [HttpGet]
         public async Task<IActionResult> GetProductByIDAsync( Guid ProductID)
         {
@@ -46,10 +47,10 @@ namespace ProductsMicroService.API.Controllers
         [HttpGet]
         public async Task<IActionResult> SearchProductsByConditionAsync(string SearchString)
         {
-            List<ProductResponse> productsByProductName = await _productService.GetProductsByCondition(temp => temp.ProductName != null && temp.ProductName.Contains(SearchString,StringComparison.OrdinalIgnoreCase));
+            List<ProductResponse> productsByProductName = await _productService.GetProductNamesByCondition(SearchString);
 
 
-            List<ProductResponse> productsByCategory = await _productService.GetProductsByCondition(temp => temp.Category != null && temp.Category.Contains(SearchString, StringComparison.OrdinalIgnoreCase));
+            List<ProductResponse> productsByCategory = await _productService.GetProductCategpriesByCondition(SearchString);
         
             var products = productsByProductName.Union(productsByCategory);
         
@@ -59,9 +60,14 @@ namespace ProductsMicroService.API.Controllers
 
         [Route("")] //POST /api/products
         [HttpPost]
-        public async Task<IActionResult> AddProductAsync(ProductAddRequest productAddRequest)
+        public async Task<IActionResult> AddProductAsync(ProductAddRequest1 productAddRequest1)
         {
-            ValidationResult validationResult = await _addProductRequestValidator.ValidateAsync(productAddRequest);
+            CategoryOptions optionsBase;
+
+            var parseIsSuccess = Enum.TryParse(productAddRequest1.Category, out optionsBase);
+            ProductAddRequest prodAddRequest = new ProductAddRequest(productAddRequest1.ProductName, optionsBase, productAddRequest1.UnitPrice, productAddRequest1.QuantityInStock);
+
+            ValidationResult validationResult = await _addProductRequestValidator.ValidateAsync(prodAddRequest);
 
             if (!validationResult.IsValid)
             {
@@ -73,7 +79,7 @@ namespace ProductsMicroService.API.Controllers
 
                 return BadRequest(info);
             }
-            var addedProductResponse = await _productService.AddProduct(productAddRequest);
+            var addedProductResponse = await _productService.AddProduct(prodAddRequest);
             if (addedProductResponse != null) 
             {
                 return Ok(addedProductResponse);
@@ -87,9 +93,19 @@ namespace ProductsMicroService.API.Controllers
 
         [Route("")] //PUT /api/products
         [HttpPut]
-        public async Task<IActionResult> UpdateProductAsync(ProductUpdateRequest productUpdateRequest)
+        public async Task<IActionResult> UpdateProductAsync(ProductUpdateRequest1 productUpdateRequest1)
         {
-            ValidationResult validationResult = await _productUpdateRequestValidator.ValidateAsync(productUpdateRequest);
+            CategoryOptions optionsBase;
+
+            var parseIsSuccess = Enum.TryParse(productUpdateRequest1.Category, out optionsBase);
+            ProductUpdateRequest prodUpdateRequest = new ProductUpdateRequest(
+                productUpdateRequest1.ProductID,
+                productUpdateRequest1.ProductName,
+                optionsBase, 
+                productUpdateRequest1.UnitPrice,
+                productUpdateRequest1.QuantityInStock);
+
+            ValidationResult validationResult = await _productUpdateRequestValidator.ValidateAsync(prodUpdateRequest);
 
             if (!validationResult.IsValid)
             {
@@ -101,7 +117,7 @@ namespace ProductsMicroService.API.Controllers
                 return BadRequest(info);
             }
 
-            var updatedProductResponse = await _productService.UpdateProduct(productUpdateRequest);
+            var updatedProductResponse = await _productService.UpdateProduct(prodUpdateRequest);
             if (updatedProductResponse != null)
             {
                 return Ok(updatedProductResponse);
@@ -114,6 +130,7 @@ namespace ProductsMicroService.API.Controllers
         }
 
         [Route("{ProductID:guid}")] //DELETE /api/products/xxxxxxxxxxxxxxxxxxx
+        [HttpDelete]
         public async Task<IActionResult> DeleteProductAsync(Guid ProductID)
         {
             bool isDeleted = await _productService.DeleteProduct(ProductID);

@@ -47,9 +47,19 @@ namespace DataAccessLayer.Repositories
             return await _dbContext.Products.ToListAsync();
         }
 
-        public async Task<IEnumerable<Product?>> GetProductsByCondition(Expression<Func<Product, bool>> conditionExpression)
+        public async Task<IEnumerable<Product?>> GetProductNamesByCondition(string SearchString)
         {
-            return await _dbContext.Products.Where(conditionExpression).ToListAsync();
+            var searchValue = SearchString.ToLower().Trim();
+            var selectedProducts = _dbContext.Products.Where(a => a.ProductName.Trim().ToLower().Contains(searchValue));
+            var selectedProductsList = selectedProducts.Count() > 0 ? selectedProducts.ToList() : new List<Product>();
+            return selectedProductsList;   
+        }
+
+        public async Task<IEnumerable<Product?>> GetProductCategoriesByCondition(string SearchString)
+        {
+            var selectedProducts = _dbContext.Products.Where(a => a.Category.Trim().ToLower().Contains(SearchString.Trim().ToLower())).ToList();
+
+            return selectedProducts;
         }
 
         public async Task<Product?> UpdateProduct(Product product)

@@ -15,10 +15,10 @@ namespace DataAccessLayer
 
             services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseMySQL(configuration.GetConnectionString("DefaultConnection"));
+                options.UseMySQL(configuration.GetConnectionString("DefaultConnection")!);
             });
 
-            services.AddScoped < IProductsRepository , ProductRepository>();
+            services.AddScoped<IProductsRepository, ProductRepository>();
 
             return services;
         }
